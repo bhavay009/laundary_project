@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-main: #f8fafc; /* Clean slate background */
+  --bg-side: #ffffff;
+  --brand-primary: #0284c7; /* Royal Blue - represents fresh water */
+  --brand-secondary: #7dd3fc; /* Light Blue */
+  --brand-light: #f0f9ff; /* Very Light Blue hint */
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --card-bg: #ffffff;
+  --accent-blue: #38bdf8;
+}
+
+@layer base {
+  body {
+    @apply antialiased bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-300;
+    font-family: 'Manrope', sans-serif;
+  }
+}
+
+@layer components {
+  /* Layout Containers */
+  .app-container {
+    @apply flex min-h-screen p-4 gap-4;
+  }
+
+  .main-content {
+    @apply flex-1 rounded-[2rem] bg-transparent overflow-hidden;
+  }
+
+  /* Sidebar Styling */
+  .sidebar-icon {
+    @apply p-3 rounded-full transition-all duration-300 flex items-center justify-center cursor-pointer;
+  }
+
+  .sidebar-icon-active {
+    @apply bg-[var(--brand-primary)] text-white shadow-lg shadow-sky-600/20;
+  }
+
+  .sidebar-icon-inactive {
+    @apply text-[var(--text-muted)] hover:bg-[var(--brand-light)] hover:text-[var(--brand-primary)];
+  }
+
+  /* Premium Cards */
+  .card-premium {
+    @apply bg-white rounded-[1.5rem] p-6 shadow-sm border border-white transition-all duration-300;
+  }
+
+  .card-premium:hover {
+    @apply shadow-lg transform -translate-y-0.5;
+  }
+
+  .stat-card-small {
+    @apply bg-white rounded-[1.25rem] p-5 flex items-center justify-between shadow-sm border border-white transition-all;
+  }
+
+  /* Typography */
+  .heading-large {
+    @apply text-3xl font-extrabold tracking-tight text-[var(--text-main)];
+  }
+
+  .heading-medium {
+    @apply text-xl font-bold text-[var(--text-main)];
+  }
+
+  .text-sub {
+    @apply text-sm font-medium text-[var(--text-muted)];
+  }
+
+  /* Buttons */
+  .btn-premium {
+    @apply px-5 py-2.5 rounded-full font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2;
+  }
+
+  .btn-premium-primary {
+    @apply bg-[var(--brand-primary)] text-white hover:bg-[#0369a1] shadow-lg shadow-sky-600/20;
+  }
+
+  .btn-premium-secondary {
+    @apply bg-white text-[var(--brand-primary)] border border-[var(--brand-light)] hover:bg-[var(--brand-light)];
+  }
+
+  /* Inputs */
+  .input-premium {
+    @apply bg-[var(--bg-side)] border border-transparent rounded-full px-5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent transition-all placeholder:text-gray-400;
+  }
+
+  .label {
+    @apply block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider;
+  }
+
+  /* Status Badges */
+  .badge-premium {
+    @apply px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5;
+  }
+
+  /* Skeleton Loading */
+  .skeleton {
+    @apply bg-gray-200 animate-pulse rounded-xl;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-sky-200 rounded-full hover:bg-sky-300;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-premium {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
