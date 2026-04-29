@@ -6,9 +6,9 @@ A modern, AI-assisted laundry management system designed to help dry cleaning st
 
 ## 🚀 Project Overview
 
-CleanQ is a lightweight system built to simplify daily operations of a laundry store. It allows users to create orders, track their processing stages, calculate billing, and gain insights through a clean and interactive dashboard.
+CleanQ is a lightweight system built to simplify daily operations of a laundry store. It enables users to create orders, track their processing stages, calculate billing, and visualize key business metrics through a clean and interactive dashboard.
 
-This project focuses on **practical execution, clean UI, and AI-assisted development** rather than over-engineering.
+This project focuses on **fast execution, practical design, and AI-assisted development**, prioritizing a working and usable product over unnecessary complexity.
 
 ---
 
@@ -56,13 +56,13 @@ This project focuses on **practical execution, clean UI, and AI-assisted develop
 ### 🔹 5. Additional Enhancements
 
 * Garment Load Tracker (workload monitoring)
-* Customers overview (dummy UI)
-* Notification system (UI-based)
+* Customers overview (UI-based with mock data)
+* Notification system (frontend-based)
 * AI Insights panel
 
 ---
 
-## 🤖 AI Usage Report (Critical Section)
+## 🤖 AI Usage Report
 
 ### 🔹 AI Tools Used
 
@@ -77,7 +77,7 @@ This project focuses on **practical execution, clean UI, and AI-assisted develop
 * Designing dashboard layout
 * Structuring features and workflows
 * Creating reusable frontend components
-* Speeding up development
+* Accelerating development speed
 
 ---
 
@@ -92,55 +92,44 @@ This project focuses on **practical execution, clean UI, and AI-assisted develop
 
 ### 🔹 What AI Got Wrong
 
-* Generated overly complex or unnecessary components
-* Inconsistent UI styling in some sections
-* Incorrect state handling in certain components
-* Generic inventory logic (not aligned with laundry workflow)
+* Generated overly complex components
+* Inconsistent UI styling in some areas
+* Incorrect state management in certain cases
+* Generic inventory logic not aligned with laundry workflows
 
 ---
 
 ### 🔹 What I Improved
 
 * Simplified architecture for better readability
-* Refined UI to maintain consistency
-* Reworked logic for order flow and status updates
+* Refined UI for consistency and usability
+* Reworked order flow and state handling
 * Converted generic inventory into a **Garment Load Tracker**
-* Improved UX for real-world usability
+* Improved UX for real-world practicality
 
 ---
 
 ### 🔹 Key Learning
 
-AI significantly accelerates development, but human judgment is required to refine logic, ensure usability, and align features with real-world scenarios.
+AI accelerates development significantly, but human judgment is essential to refine logic, maintain simplicity, and ensure real-world usability.
 
 ---
 
 ## 🧠 AI-Inspired Features
 
-* AI Insights panel showing workload patterns
-* Garment Load Tracker for operational monitoring
-* Smart UI representing business insights
-* Simulated AI recommendations for better decision-making
+* AI Insights panel highlighting workload patterns
+* Garment Load Tracker for operational visibility
+* Smart UI elements simulating business insights
+* Contextual recommendations (simulated AI behavior)
 
 ---
 
 ## ⚙️ Tech Stack
 
 * Frontend: React.js + Tailwind CSS
-* Backend: Node.js + Express.js
-* Database: MongoDB / Firebase
+* State Management: React Hooks (useState, useEffect)
+* Data Handling: In-memory state + localStorage
 * Tools: Git, GitHub
-
----
-
-## 📸 Screenshots
-
-
-
-* Dashboard
-* Create Order
-* Orders List
-* AI Insights
 
 ---
 
@@ -175,9 +164,9 @@ npm start
 
 ## ⚖️ Tradeoffs
 
-* Used mock data in some modules for faster execution
-* Focused on UI/UX over complex backend features
-* Did not implement authentication to keep system simple
+* Used in-memory state and localStorage instead of backend/database to ensure a smooth and reliable deployed demo experience (as allowed in the assignment)
+* Prioritized UI/UX and working product over backend complexity
+* Skipped authentication to keep system simple and focused
 * AI features are simulated rather than API-driven
 
 ---
@@ -185,6 +174,7 @@ npm start
 ## 🔮 Future Improvements
 
 * Real-time notifications
+* Backend integration (Node.js + MongoDB)
 * AI-based demand prediction
 * Customer analytics system
 * Full inventory management
@@ -194,7 +184,7 @@ npm start
 
 ## 📌 Conclusion
 
-This project demonstrates the ability to build a functional system quickly using AI-assisted development while applying strong product thinking, UI/UX design, and practical engineering decisions.
+This project demonstrates the ability to quickly build a functional system using AI-assisted development while applying strong product thinking, UI/UX design, and practical engineering decisions.
 
 ---
 
