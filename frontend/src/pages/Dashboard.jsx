@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ClipboardList,
@@ -12,12 +12,10 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import { getDashboardStats, getRevenueTrend, getOrders, getTodayStats, updateOrderStatus } from '../api/orders';
+import { useOrdersContext } from '../context/OrdersContext';
 import StatCard from '../components/dashboard/StatCard';
-import { StatusChart, RevenueChart } from '../components/dashboard/StatusChart';
+import { StatusChart } from '../components/dashboard/StatusChart';
 import StatusBadge from '../components/ui/StatusBadge';
-import { StatCardSkeleton, DashboardChartSkeleton } from '../components/ui/Skeleton';
-import AIInsightsPanel from '../components/dashboard/AIInsightsPanel';
 import TopGarments from '../components/dashboard/TopGarments';
 import ProfileCard from '../components/dashboard/ProfileCard';
 
@@ -25,48 +23,66 @@ const STATUS_FLOW = ['RECEIVED', 'PROCESSING', 'READY', 'DELIVERED'];
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [stats, setStats] = useState(null);
-  const [revenueTrend, setRevenueTrend] = useState([]);
-  const [recentOrders, setRecentOrders] = useState([]);
-  const [todayData, setTodayData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { orders, updateOrderStatus } = useOrdersContext();
+  const [loading, setLoading] = useState(false);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [statsRes, trendRes, ordersRes, todayRes] = await Promise.all([
-        getDashboardStats(),
-        getRevenueTrend(),
-        getOrders({ limit: 5, sort: '-createdAt' }),
-        getTodayStats(),
-      ]);
-      setStats(statsRes.data);
-      setRevenueTrend(trendRes.data);
-      setRecentOrders(ordersRes.data);
-      setTodayData(todayRes.data);
-    } catch (err) {
-      console.error('Dashboard fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Calculate stats from local orders
+  const stats = useMemo(() => {
+    if (orders.length === 0) return null;
+    
+    const totalOrders = orders.length;
+    const totalRevenue = orders.reduce((sum, o) => sum + o.totalAmount, 0);
+    const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+    const pendingPickup = orders.filter(o => o.status === 'READY').length;
+    
+    // Status breakdown
+    const statusBreakdown = STATUS_FLOW.map(status => ({
+      status,
+      count: orders.filter(o => o.status === status).length,
+    }));
+    
+    return { totalOrders, totalRevenue, avgOrderValue, pendingPickup, statusBreakdown };
+  }, [orders]);
 
-  useEffect(() => {
-    fetchData();
+  // Get today's data
+  const todayData = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayOrders = orders.filter(o => o.date === today);
+    return {
+      ordersToday: todayOrders.length,
+      revenueToday: todayOrders.reduce((sum, o) => sum + o.totalAmount, 0),
+    };
+  }, [orders]);
+
+  // Recent orders (last 5)
+  const recentOrders = useMemo(() => {
+    return orders.slice(0, 5);
+  }, [orders]);
+
+  // Revenue trend (mock data for chart)
+  const revenueTrend = useMemo(() => {
+    return [
+      { day: 'Mon', revenue: 1200 },
+      { day: 'Tue', revenue: 1800 },
+      { day: 'Wed', revenue: 1400 },
+      { day: 'Thu', revenue: 2200 },
+      { day: 'Fri', revenue: 1900 },
+      { day: 'Sat', revenue: 2500 },
+      { day: 'Sun', revenue: 1600 },
+    ];
   }, []);
 
-  const handleQuickStatusUpdate = async (id, currentStatus) => {
+  const handleQuickStatusUpdate = (id, currentStatus) => {
     const currentIdx = STATUS_FLOW.indexOf(currentStatus);
     const nextStatus = currentIdx < STATUS_FLOW.length - 1 ? STATUS_FLOW[currentIdx + 1] : null;
     
     if (!nextStatus) return;
 
     try {
-      await updateOrderStatus(id, nextStatus);
+      updateOrderStatus(id, nextStatus);
       toast.success(`Order moved to ${nextStatus}`, {
         style: { borderRadius: '1rem', background: '#0284c7', color: '#fff' }
       });
-      fetchData();
     } catch (err) {
       toast.error('Update failed');
     }
@@ -75,7 +91,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Today's High-Level Snapshot */}
-      {!loading && todayData && (
+      {!loading && (
         <div className="card-premium bg-gradient-to-r from-sky-800 to-sky-600 p-6 text-white border-none shadow-lg mb-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-12 opacity-5 translate-x-1/4 -translate-y-1/4">
             <Sparkles className="w-64 h-64" />
@@ -95,7 +111,6 @@ export default function Dashboard() {
                 <p className="text-[10px] uppercase font-bold text-emerald-100/50 mb-1">Incoming</p>
                 <div className="flex items-baseline gap-1">
                   <p className="text-2xl font-black">{todayData.ordersToday}</p>
-                  <span className="text-[10px] font-bold text-emerald-300">+2</span>
                 </div>
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/5 flex flex-col items-center min-w-[140px]">
@@ -112,7 +127,7 @@ export default function Dashboard() {
       {/* Main Stat Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {loading ? (
-          [...Array(4)].map((_, i) => <StatCardSkeleton key={i} />)
+          [...Array(4)].map((_, i) => <div key={i} className="card p-6 animate-pulse"><div className="h-20 bg-gray-200 rounded"></div></div>)
         ) : stats && (
           <>
             <StatCard title="Total Orders" value={stats.totalOrders} trend={12} icon={ClipboardList} />
@@ -132,19 +147,29 @@ export default function Dashboard() {
                 <h3 className="heading-medium">Revenue Trends</h3>
                 <div className="bg-[var(--bg-main)] px-3 py-1 rounded-full text-[10px] font-bold text-[var(--brand-secondary)] uppercase">Weekly</div>
               </div>
-              {loading ? <DashboardChartSkeleton /> : <RevenueChart data={revenueTrend} />}
+              {/* Simple bar chart visualization */}
+              <div className="flex items-end justify-between h-64 gap-2 px-4">
+                {revenueTrend.map((item, idx) => (
+                  <div key={idx} className="flex flex-col items-center flex-1">
+                    <div 
+                      className="w-full bg-brand-500 rounded-t-md transition-all hover:bg-brand-600"
+                      style={{ height: `${(item.revenue / 2500) * 100}%` }}
+                    />
+                    <span className="text-[10px] text-gray-500 mt-2">{item.day}</span>
+                  </div>
+                ))}
+              </div>
             </div>
             
             <div className="card-premium p-4">
               <div className="flex items-center justify-between mb-4 px-2">
                 <h3 className="heading-medium">Job Status</h3>
               </div>
-              {loading ? <DashboardChartSkeleton /> : <StatusChart data={stats?.statusBreakdown} />}
+              <StatusChart data={stats?.statusBreakdown} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AIInsightsPanel />
             <TopGarments />
           </div>
 
@@ -171,16 +196,16 @@ export default function Dashboard() {
                 <tbody className="divide-y divide-gray-50">
                   {!loading && recentOrders.map((order) => (
                     <tr 
-                      key={order._id} 
-                      onClick={() => navigate(`/orders/${order._id}`)}
+                      key={order.id} 
+                      onClick={() => navigate(`/orders/${order.id}`)}
                       className="group cursor-pointer hover:bg-[var(--bg-main)] transition-colors"
                     >
-                      <td className="py-4 px-2 font-black text-sm text-[var(--brand-primary)] uppercase">{order.orderId}</td>
+                      <td className="py-4 px-2 font-black text-sm text-[var(--brand-primary)] uppercase">{order.id}</td>
                       <td className="py-4">
                         <p className="text-sm font-bold text-gray-900">{order.customerName}</p>
-                        <p className="text-[10px] text-gray-400">{order.phoneNumber}</p>
+                        <p className="text-[10px] text-gray-400">{order.phone}</p>
                       </td>
-                      <td className="py-4 text-right font-black text-sm">₹{order.totalBill.toLocaleString()}</td>
+                      <td className="py-4 text-right font-black text-sm">₹{order.totalAmount.toLocaleString()}</td>
                       <td className="py-4">
                         <div className="flex justify-center">
                            <StatusBadge status={order.status} size="xs" />
@@ -191,7 +216,7 @@ export default function Dashboard() {
                            <button 
                              onClick={(e) => {
                                e.stopPropagation();
-                               handleQuickStatusUpdate(order._id, order.status);
+                               handleQuickStatusUpdate(order.id, order.status);
                              }}
                              className="p-2 bg-[var(--brand-light)] text-[var(--brand-primary)] rounded-lg hover:bg-[var(--brand-primary)] hover:text-white transition-all group/action"
                              title="Advance Status"
@@ -201,8 +226,7 @@ export default function Dashboard() {
                          )}
                       </td>
                       <td className="py-4 text-right">
-                         <p className="text-[10px] font-bold text-gray-500 uppercase">{format(new Date(order.createdAt), 'MMM dd')}</p>
-                         <p className="text-[9px] text-gray-400">{format(new Date(order.createdAt), 'hh:mm a')}</p>
+                         <p className="text-[10px] font-bold text-gray-500 uppercase">{format(new Date(order.date), 'MMM dd')}</p>
                       </td>
                     </tr>
                   ))}

@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { PlusCircle, Trash2, Save, Loader2, Sparkles } from 'lucide-react';
-import { getPricingSuggestions } from '../../api/ai';
 
 const GARMENT_TYPES = [
   'Shirt',
@@ -20,6 +19,25 @@ const GARMENT_TYPES = [
   'Other',
 ];
 
+// Default pricing hints (static, no API needed)
+const DEFAULT_PRICING = {
+  'Shirt': 50,
+  'T-Shirt': 40,
+  'Pants / Trousers': 80,
+  'Jeans': 60,
+  'Jacket / Blazer': 150,
+  'Suit (2-piece)': 200,
+  'Suit (3-piece)': 250,
+  'Dress': 120,
+  'Skirt': 70,
+  'Saree': 150,
+  'Kurta': 80,
+  'Bedsheet': 100,
+  'Curtain': 120,
+  'Blanket': 150,
+  'Other': 50,
+};
+
 const emptyGarment = { type: '', quantity: 1, pricePerItem: '' };
 
 export default function OrderForm({ initialData, onSubmit, loading = false }) {
@@ -36,21 +54,6 @@ export default function OrderForm({ initialData, onSubmit, loading = false }) {
       : [{ ...emptyGarment }]
   );
   const [errors, setErrors] = useState({});
-  const [pricingHints, setPricingHints] = useState({});
-
-  useEffect(() => {
-    const fetchHints = async () => {
-      try {
-        const res = await getPricingSuggestions();
-        const hints = {};
-        res.data.forEach(h => hints[h.type] = h);
-        setPricingHints(hints);
-      } catch (err) {
-        console.error('Failed to fetch pricing hints:', err);
-      }
-    };
-    fetchHints();
-  }, []);
 
   const totalBill = garments.reduce(
     (sum, g) => sum + (Number(g.quantity) || 0) * (Number(g.pricePerItem) || 0),
@@ -226,10 +229,10 @@ export default function OrderForm({ initialData, onSubmit, loading = false }) {
                   className={`input ${errors[`garment_${idx}_price`] ? 'ring-2 ring-red-500' : ''}`}
                   placeholder="0"
                 />
-                {g.type && pricingHints[g.type] && (
+                {g.type && DEFAULT_PRICING[g.type] && (
                   <p className="text-[10px] text-brand-600 mt-1 flex items-center gap-1 font-medium">
                     <Sparkles className="w-2.5 h-2.5" />
-                    AI Suggests: ₹{pricingHints[g.type].suggested}
+                    Suggests: ₹{DEFAULT_PRICING[g.type]}
                   </p>
                 )}
               </div>

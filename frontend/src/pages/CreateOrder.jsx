@@ -2,22 +2,33 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { createOrder } from '../api/orders';
+import { useOrdersContext } from '../context/OrdersContext';
 import OrderForm from '../components/orders/OrderForm';
 
 export default function CreateOrder() {
   const navigate = useNavigate();
+  const { addOrder } = useOrdersContext();
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (data) => {
+  const handleSubmit = (data) => {
     setLoading(true);
     try {
-      const res = await createOrder(data);
-      toast.success(`Order ${res.data.orderId} created successfully!`);
-      navigate(`/orders/${res.data._id}`);
+      // Transform form data to match our order model
+      const orderData = {
+        customerName: data.customerName,
+        phone: data.phoneNumber,
+        garments: data.garments.map((g) => ({
+          name: g.type,
+          quantity: g.quantity,
+          price: g.pricePerItem,
+        })),
+      };
+
+      const newOrder = addOrder(orderData);
+      toast.success(`Order ${newOrder.id} created successfully!`);
+      navigate(`/orders/${newOrder.id}`);
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to create order';
-      toast.error(msg);
+      toast.error('Failed to create order');
     } finally {
       setLoading(false);
     }

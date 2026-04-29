@@ -14,16 +14,10 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import {
-  getOrder,
-  updateOrder,
-  updateOrderStatus,
-  deleteOrder,
-} from '../api/orders';
+import { useOrdersContext } from '../context/OrdersContext';
 import StatusBadge from '../components/ui/StatusBadge';
 import Modal from '../components/ui/Modal';
 import OrderForm from '../components/orders/OrderForm';
-import AISuggestions from '../components/orders/AISuggestions';
 
 
 const STATUS_FLOW = ['RECEIVED', 'PROCESSING', 'READY', 'DELIVERED'];
@@ -37,6 +31,8 @@ const STATUS_LABELS = {
 export default function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { getOrder, updateOrder, updateOrderStatus, deleteOrder } = useOrdersContext();
+  
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusLoading, setStatusLoading] = useState(false);
@@ -46,22 +42,18 @@ export default function OrderDetail() {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
-    const fetchOrder = async () => {
-      setLoading(true);
-      try {
-        const res = await getOrder(id);
-        setOrder(res.data);
-      } catch (err) {
-        toast.error('Order not found');
-        navigate('/orders');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOrder();
-  }, [id, navigate]);
+    // Load order from context
+    const foundOrder = getOrder(id);
+    if (foundOrder) {
+      setOrder(foundOrder);
+    } else {
+      toast.error('Order not found');
+      navigate('/orders');
+    }
+    setLoading(false);
+  }, [id, navigate, getOrder]);
 
-  const handleAdvanceStatus = async () => {
+  const handleAdvanceStatus = () => {
     if (!order) return;
     const currentIdx = STATUS_FLOW.indexOf(order.status);
     const nextStatus = STATUS_FLOW[currentIdx + 1];
@@ -69,34 +61,43 @@ export default function OrderDetail() {
 
     setStatusLoading(true);
     try {
-      const res = await updateOrderStatus(id, nextStatus);
-      setOrder(res.data);
+      updateOrderStatus(id, nextStatus);
+      setOrder((prev) => ({ ...prev, status: nextStatus }));
       toast.success(`Status updated to ${STATUS_LABELS[nextStatus]}`);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update status');
+      toast.error('Failed to update status');
     } finally {
       setStatusLoading(false);
     }
   };
 
-  const handleEdit = async (data) => {
+  const handleEdit = (data) => {
     setEditLoading(true);
     try {
-      const res = await updateOrder(id, data);
-      setOrder(res.data);
+      const updatedData = {
+        customerName: data.customerName,
+        phone: data.phoneNumber,
+        garments: data.garments.map((g) => ({
+          name: g.type,
+          quantity: g.quantity,
+          price: g.pricePerItem,
+        })),
+      };
+      updateOrder(id, updatedData);
+      setOrder((prev) => ({ ...prev, ...updatedData }));
       setShowEdit(false);
       toast.success('Order updated successfully');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update order');
+      toast.error('Failed to update order');
     } finally {
       setEditLoading(false);
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     setDeleteLoading(true);
     try {
-      await deleteOrder(id);
+      deleteOrder(id);
       toast.success('Order deleted');
       navigate('/orders');
     } catch (err) {
@@ -134,11 +135,11 @@ export default function OrderDetail() {
           </button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="page-title">{order.orderId}</h1>
+              <h1 className="page-title">{order.id}</h1>
               <StatusBadge status={order.status} size="md" />
             </div>
             <p className="page-subtitle">
-              Created {format(new Date(order.createdAt), 'MMM dd, yyyy · h:mm a')}
+              Created {format(new Date(order.date), 'MMM dd, yyyy')}
             </p>
           </div>
         </div>
@@ -238,12 +239,12 @@ export default function OrderDetail() {
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Phone className="w-4 h-4 text-gray-400" />
-              {order.phoneNumber}
+              {order.phone}
             </div>
-            {order.estimatedDelivery && (
+            {order.date && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Calendar className="w-4 h-4 text-gray-400" />
-                Est. {format(new Date(order.estimatedDelivery), 'MMM dd, yyyy')}
+                {format(new Date(order.date), 'MMM dd, yyyy')}
               </div>
             )}
             <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -279,13 +280,13 @@ export default function OrderDetail() {
               <tbody className="divide-y divide-gray-50">
                 {order.garments.map((g, idx) => (
                   <tr key={idx}>
-                    <td className="py-3 font-medium text-gray-900">{g.type}</td>
+                    <td className="py-3 font-medium text-gray-900">{g.name}</td>
                     <td className="py-3 text-center text-gray-600">{g.quantity}</td>
                     <td className="py-3 text-right text-gray-600">
-                      ₹{g.pricePerItem.toLocaleString()}
+                      ₹{g.price.toLocaleString()}
                     </td>
                     <td className="py-3 text-right font-medium text-gray-900">
-                      ₹{(g.quantity * g.pricePerItem).toLocaleString()}
+                      ₹{(g.quantity * g.price).toLocaleString()}
                     </td>
                   </tr>
                 ))}
@@ -296,7 +297,7 @@ export default function OrderDetail() {
                     Total
                   </td>
                   <td className="py-3 text-right text-xl font-bold text-brand-600">
-                    ₹{order.totalBill.toLocaleString()}
+                    ₹{order.totalAmount.toLocaleString()}
                   </td>
                 </tr>
               </tfoot>
@@ -304,9 +305,6 @@ export default function OrderDetail() {
           </div>
         </div>
       </div>
-
-      {/* AI Intelligence Panel */}
-      <AISuggestions order={order} />
 
       {/* Status History */}
       {order.statusHistory?.length > 0 && (

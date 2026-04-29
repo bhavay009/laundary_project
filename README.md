@@ -133,6 +133,17 @@ AI significantly accelerates development, but human judgment is required to refi
 
 ---
 
+## 📸 Screenshots
+
+
+
+* Dashboard
+* Create Order
+* Orders List
+* AI Insights
+
+---
+
 ## 🎥 Demo
 
 👉 Demo Video: https://www.loom.com/share/111f08fe63094449ac9297889d8177a8

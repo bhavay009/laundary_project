@@ -5,11 +5,10 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import StatusBadge from '../ui/StatusBadge';
 import DeliveryBadge from './DeliveryBadge';
-import { updateOrderStatus } from '../../api/orders';
 
 const STATUS_FLOW = ['RECEIVED', 'PROCESSING', 'READY', 'DELIVERED'];
 
-export default function OrderCard({ order, onUpdate }) {
+export default function OrderCard({ order, onStatusUpdate }) {
   const navigate = useNavigate();
   const [updating, setUpdating] = useState(false);
   const garmentCount = order.garments.reduce((sum, g) => sum + g.quantity, 0);
@@ -17,19 +16,18 @@ export default function OrderCard({ order, onUpdate }) {
   const currentIdx = STATUS_FLOW.indexOf(order.status);
   const nextStatus = currentIdx < STATUS_FLOW.length - 1 ? STATUS_FLOW[currentIdx + 1] : null;
 
-  const handleStatusUpdate = async (e) => {
+  const handleStatusUpdate = (e) => {
     e.stopPropagation();
     if (!nextStatus || updating) return;
 
     setUpdating(true);
     try {
-      await updateOrderStatus(order._id, nextStatus);
+      onStatusUpdate(order.id, nextStatus);
       toast.success(`Order moved to ${nextStatus}`, {
         style: { borderRadius: '1rem', background: '#0284c7', color: '#fff' }
       });
-      if (onUpdate) onUpdate();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Update failed');
+      toast.error('Update failed');
     } finally {
       setUpdating(false);
     }
@@ -37,15 +35,15 @@ export default function OrderCard({ order, onUpdate }) {
 
   return (
     <div
-      onClick={() => navigate(`/orders/${order._id}`)}
+      onClick={() => navigate(`/orders/${order.id}`)}
       className="card-premium p-5 cursor-pointer group hover:border-[var(--brand-primary)] animate-fade-in"
-      id={`order-card-${order.orderId}`}
+      id={`order-card-${order.id}`}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div>
           <p className="text-[10px] font-black text-[var(--brand-primary)] tracking-widest uppercase mb-0.5">
-            {order.orderId}
+            {order.id}
           </p>
           <h3 className="heading-medium group-hover:text-[var(--brand-primary)] transition-colors">
             {order.customerName}
@@ -60,7 +58,7 @@ export default function OrderCard({ order, onUpdate }) {
           <div className="w-8 h-8 rounded-lg bg-[var(--bg-main)] flex items-center justify-center">
              <Phone className="w-4 h-4 text-[var(--brand-primary)] opacity-70" />
           </div>
-          <span>{order.phoneNumber}</span>
+          <span>{order.phone}</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
           <div className="w-8 h-8 rounded-lg bg-[var(--bg-main)] flex items-center justify-center">
@@ -71,14 +69,13 @@ export default function OrderCard({ order, onUpdate }) {
             {order.garments.length} garment types
           </span>
         </div>
-        {order.estimatedDelivery && (
+        {order.date && (
           <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
             <div className="w-8 h-8 rounded-lg bg-[var(--bg-main)] flex items-center justify-center">
                <Calendar className="w-4 h-4 text-[var(--brand-primary)] opacity-70" />
             </div>
             <div className="flex items-center gap-2">
-              <span>{format(new Date(order.estimatedDelivery), 'MMM dd')}</span>
-              <DeliveryBadge estimatedDelivery={order.estimatedDelivery} status={order.status} />
+              <span>{format(new Date(order.date), 'MMM dd, yyyy')}</span>
             </div>
           </div>
         )}
@@ -87,7 +84,7 @@ export default function OrderCard({ order, onUpdate }) {
       {/* Footer Info */}
       <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-50">
         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Bill</span>
-        <span className="text-lg font-black text-[var(--text-main)]">₹{order.totalBill.toLocaleString()}</span>
+        <span className="text-lg font-black text-[var(--text-main)]">₹{order.totalAmount.toLocaleString()}</span>
       </div>
 
       {/* Action Footer */}

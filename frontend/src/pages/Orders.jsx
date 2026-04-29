@@ -1,47 +1,59 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getOrders } from '../api/orders';
-import { useDebounce } from '../hooks/useDebounce';
+import { useOrdersContext } from '../context/OrdersContext';
 import OrderCard from '../components/orders/OrderCard';
 import OrderFilters from '../components/orders/OrderFilters';
-import { OrderCardSkeleton } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
+
+const ITEMS_PER_PAGE = 12;
 
 export default function Orders() {
   const navigate = useNavigate();
-  const [orders, setOrders] = useState([]);
-  const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
-  const [loading, setLoading] = useState(true);
+  const { orders, updateOrderStatus } = useOrdersContext();
+  
   const [status, setStatus] = useState('ALL');
   const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 400);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchOrders = useCallback(async (page = 1) => {
-    setLoading(true);
-    try {
-      const params = { page, limit: 12 };
-      if (status !== 'ALL') params.status = status;
-      if (debouncedSearch) params.search = debouncedSearch;
+  // Filter orders based on search and status
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const matchesSearch =
+        !search ||
+        order.customerName.toLowerCase().includes(search.toLowerCase()) ||
+        order.phone.includes(search) ||
+        order.id.toLowerCase().includes(search.toLowerCase());
 
-      const res = await getOrders(params);
-      setOrders(res.data);
-      setPagination(res.pagination);
-    } catch (err) {
-      console.error('Error fetching orders:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [status, debouncedSearch]);
+      const matchesStatus =
+        !status || status === 'ALL' || order.status === status;
 
-  useEffect(() => {
-    fetchOrders(1);
-  }, [fetchOrders]);
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, search, status]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredOrders.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredOrders, currentPage]);
 
   const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > pagination.pages) return;
-    fetchOrders(newPage);
+    if (newPage < 1 || newPage > totalPages) return;
+    setCurrentPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Reset page when filters change
+  const handleStatusChange = (newStatus) => {
+    setStatus(newStatus);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (newSearch) => {
+    setSearch(newSearch);
+    setCurrentPage(1);
   };
 
   return (
@@ -51,7 +63,7 @@ export default function Orders() {
         <div>
           <h1 className="page-title">Orders</h1>
           <p className="page-subtitle">
-            {loading ? 'Loading...' : `${pagination.total} total order${pagination.total !== 1 ? 's' : ''}`}
+            {filteredOrders.length} total order{filteredOrders.length !== 1 ? 's' : ''}
           </p>
         </div>
         <button
@@ -67,19 +79,13 @@ export default function Orders() {
       {/* Filters */}
       <OrderFilters
         status={status}
-        onStatusChange={setStatus}
+        onStatusChange={handleStatusChange}
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={handleSearchChange}
       />
 
       {/* Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <OrderCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : orders.length === 0 ? (
+      {paginatedOrders.length === 0 ? (
         <EmptyState
           title="No orders found"
           description={
@@ -92,18 +98,22 @@ export default function Orders() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {orders.map((order) => (
-            <OrderCard key={order._id} order={order} onUpdate={fetchOrders} />
+          {paginatedOrders.map((order) => (
+            <OrderCard 
+              key={order.id} 
+              order={order} 
+              onStatusUpdate={updateOrderStatus}
+            />
           ))}
         </div>
       )}
 
       {/* Pagination */}
-      {!loading && pagination.pages > 1 && (
+      {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 pt-2">
           <button
-            onClick={() => handlePageChange(pagination.page - 1)}
-            disabled={pagination.page === 1}
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
             className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 
                        disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             aria-label="Previous page"
@@ -111,14 +121,14 @@ export default function Orders() {
             <ChevronLeft className="w-4 h-4" />
           </button>
 
-          {[...Array(pagination.pages)].map((_, i) => (
+          {[...Array(totalPages)].map((_, i) => (
             <button
               key={i + 1}
               onClick={() => handlePageChange(i + 1)}
               className={`
                 w-9 h-9 rounded-lg text-sm font-medium transition-all duration-150
                 ${
-                  pagination.page === i + 1
+                  currentPage === i + 1
                     ? 'bg-brand-600 text-white shadow-sm'
                     : 'text-gray-600 hover:bg-gray-100'
                 }
@@ -129,8 +139,8 @@ export default function Orders() {
           ))}
 
           <button
-            onClick={() => handlePageChange(pagination.page + 1)}
-            disabled={pagination.page === pagination.pages}
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
             className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 
                        disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             aria-label="Next page"

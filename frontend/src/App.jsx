@@ -7,21 +7,24 @@ import OrderDetail from './pages/OrderDetail';
 import Inventory from './pages/Inventory';
 import Customers from './pages/Customers';
 import Settings from './pages/Settings';
+import { OrdersProvider } from './context/OrdersContext';
 
 function App() {
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/orders" element={<Orders />} />
-        <Route path="/orders/new" element={<CreateOrder />} />
-        <Route path="/orders/:id" element={<OrderDetail />} />
-        <Route path="/inventory" element={<Inventory />} />
-        <Route path="/customers" element={<Customers />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Layout>
+    <OrdersProvider>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/orders/new" element={<CreateOrder />} />
+          <Route path="/orders/:id" element={<OrderDetail />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/customers" element={<Customers />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Layout>
+    </OrdersProvider>
   );
 }
 
