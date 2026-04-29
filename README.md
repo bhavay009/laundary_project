@@ -133,6 +133,10 @@ AI accelerates development significantly, but human judgment is essential to ref
 
 ---
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7a141fd (docs: update README file)
 ## 🎥 Demo
 
 👉 Demo Video: https://www.loom.com/share/111f08fe63094449ac9297889d8177a8
@@ -191,3 +195,4 @@ This project demonstrates the ability to quickly build a functional system using
 ## 👨‍💻 Author
 
 Bhavay Goyal
+
